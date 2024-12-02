@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Data per Jam</title>
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Data Rata-Rata per Jam</h1>
+
+    <!-- Chart Container (Two charts in the top row) -->
+    <div class="chart-container">
+      <div class="chart-wrapper">
+        <div class="chart-title">Rata-rata Suhu dan Kelembapan</div>
+        <canvas id="tempHumidityChart"></canvas>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-title">Rata-rata Level Gas</div>
+        <canvas id="gasLevelChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Table Container (Table below the charts) -->
+    <table id="averageTable">
+      <thead>
+        <tr>
+          <th>Jam</th>
+          <th>Rata-rata Suhu (°C)</th>
+          <th>Rata-rata Kelembapan (%)</th>
+          <th>Rata-rata Gas Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be displayed here -->
+      </tbody>
+    </table>
+
+  </div>
+
+  <footer>
+    &copy; 2024 Real-time Data Visualizer | Powered by Socket.IO & Chart.js
+  </footer>
+
+  <script>
+    const socket = io();
+
+    socket.on('random_data', function (data) {
+      console.log("Received random data:", data);
+      updateRandomDataChart(data);
+      addRowToTable(data);
+    });
+
+    const tempHumidityCtx = document.getElementById('tempHumidityChart').getContext('2d');
+    const gasLevelCtx = document.getElementById('gasLevelChart').getContext('2d');
+
+    // Initialize the charts
+    const tempHumidityChart = new Chart(tempHumidityCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Suhu', data: [], borderColor: 'red', fill: false },
+          { label: 'Kelembapan', data: [], borderColor: 'blue', fill: false }
+        ]
+      }
+    });
+
+    const gasLevelChart = new Chart(gasLevelCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{ label: 'Gas Level', data: [], borderColor: 'green', fill: false }]
+      }
+    });
+
+    // Update the charts with real-time data
+    function updateRandomDataChart(data) {
+      const currentTime = new Date().toLocaleTimeString();
+      
+      // Update chart data
+      tempHumidityChart.data.labels.push(currentTime);
+      tempHumidityChart.data.datasets[0].data.push(data.temperature);
+      tempHumidityChart.data.datasets[1].data.push(data.humidity);
+
+      gasLevelChart.data.labels.push(currentTime);
+      gasLevelChart.data.datasets[0].data.push(data.gas_level);
+
+      // Limit the number of points on the chart (keep only 10 most recent points)
+      if (tempHumidityChart.data.labels.length > 10) {
+        tempHumidityChart.data.labels.shift();
+        tempHumidityChart.data.datasets.forEach(dataset => dataset.data.shift());
+      }
+
+      if (gasLevelChart.data.labels.length > 10) {
+        gasLevelChart.data.labels.shift();
+        gasLevelChart.data.datasets[0].data.shift();
+      }
+
+      tempHumidityChart.update();
+      gasLevelChart.update();
+    }
+
+    // Function to add new row to table
+    function addRowToTable(data) {
+      const tableBody = document.getElementById('averageTable').getElementsByTagName('tbody')[0];
+      const row = tableBody.insertRow();
+      const currentTime = new Date().toLocaleTimeString();
+
+      row.insertCell(0).textContent = currentTime;
+      row.insertCell(1).textContent = data.temperature.toFixed(2);
+      row.insertCell(2).textContent = data.humidity.toFixed(2);
+      row.insertCell(3).textContent = data.gas_level.toFixed(2);
+    }
+  </script>
+</body>
+
+</html>
