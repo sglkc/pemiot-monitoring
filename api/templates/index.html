@@ -50,7 +50,7 @@
   <script>
     const socket = io();
 
-    socket.on('random_data', function (data) {
+    socket.on('sensor_data', function (data) {
       console.log("Received random data:", data);
       updateRandomDataChart(data);
       addRowToTable(data);
@@ -82,7 +82,7 @@
     // Update the charts with real-time data
     function updateRandomDataChart(data) {
       const currentTime = new Date().toLocaleTimeString();
-      
+
       // Update chart data
       tempHumidityChart.data.labels.push(currentTime);
       tempHumidityChart.data.datasets[0].data.push(data.temperature);
